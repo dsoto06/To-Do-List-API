@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 //include images into your bundle
 import rigoImage from "../../img/rigo-baby.jpg";
@@ -7,29 +7,29 @@ import rigoImage from "../../img/rigo-baby.jpg";
 export function Home() {
 	let [task, setTask] = useState("");
 	const [taskLists, setTaskLists] = useState([]);
+	useEffect(() => {
+		fetching();
+	}, []);
 	const change = e => {
 		setTask(e.target.value);
 	};
 	const AddTask = () => {
-		if (task !== "") {
-			const taskDetails = {
-				id: Math.floor(Math.random() * 1000),
-				value: task
-			};
-			setTaskLists([...taskLists, taskDetails]);
-		}
-	};
-	const deletetask = (e, id) => {
-		e.preventDefault();
-		setTaskLists(taskLists.filter(t => t.id != id));
-	};
+		let newList = [...taskLists, { label: task, done: false }];
 
-	const counter = () => {
-		if (taskLists.length == 0) {
-			return "No tasks";
-		} else {
-			return <li>{taskLists.length} Tasks</li>;
-		}
+		var myHeaders = new Headers();
+		myHeaders.append("Content-Type", "application/json");
+
+		var raw = JSON.stringify(newList);
+
+		fetch("https://assets.breatheco.de/apis/fake/todos/user/dsoto06", {
+			method: "PUT",
+			headers: myHeaders,
+			body: raw,
+			redirect: "follow"
+		})
+			.then(response => response.json())
+			.then(data => fetching())
+			.catch(error => console.log("error", error));
 	};
 
 	const fetching = () => {
@@ -56,6 +56,28 @@ export function Home() {
 	};
 	fetching();
 
+	const deletetask = e => {
+		e.preventDefault();
+
+		var raw = "";
+		fetch("https://assets.breatheco.de/apis/fake/todos/user/dsoto06", {
+			method: "DELETE",
+			body: raw,
+			redirect: "follow"
+		})
+			.then(response => response.json())
+			.then(data => setTaskLists([data]))
+			.catch(error => console.log("error", error));
+	};
+
+	const counter = () => {
+		if (taskLists.length == 0) {
+			return "No tasks";
+		} else {
+			return <li>{taskLists.length} Tasks</li>;
+		}
+	};
+
 	return (
 		<div className="container">
 			<div className="title">
@@ -76,18 +98,18 @@ export function Home() {
 					{taskLists !== [] ? (
 						<li>
 							{taskLists.map(t => (
-								<li key={t.value} className="list-group-item">
+								<li key={t.data} className="list-group-item">
 									{t.label}
-									<button
-										className="btn btn-danger float-right"
-										onClick={e => deletetask(e, t.id)}>
-										X
-									</button>
 								</li>
 							))}
 						</li>
 					) : null}
 					<li className="list-group-item">{counter()}</li>
+					<button
+						className="btn btn-danger float-right"
+						onClick={e => deletetask(e)}>
+						X
+					</button>
 				</ul>
 			</div>
 		</div>
